@@ -13,17 +13,19 @@
   </dl>
   {% if order.conflicts %}
     <div class="flash error">
-      该单当前有 {{ order.conflicts|length }} 个冲突格（实发量超过上限），已暂停参与归因。
-      请整单更正以解除。
+      该单当前有 {{ order.conflicts|length }} 个超限格（按风机与 UTC 时刻，实发量超过上限），
+      已整单暂停参与归因；全部消除后自动恢复。请核对或更正。
     </div>
     <table class="data compact">
-      <thead><tr><th>冲突格 (UTC)</th><th class="num">可发量</th><th class="num">实发量</th><th class="num">每格上限</th></tr></thead>
+      <thead><tr><th>风机</th><th>超限格 (UTC)</th><th class="num">可发量</th><th class="num">实发量</th><th class="num">每格上限</th></tr></thead>
       <tbody>
         {% for c in order.conflicts %}
-        <tr><td>{{ c.start_utc }}</td><td class="num">{{ c.available }}</td><td class="num warn">{{ c.actual }}</td><td class="num">{{ c.cap }}</td></tr>
+        <tr><td>{{ c.turbine }}</td><td>{{ c.start_utc }}</td><td class="num">{{ c.available }}</td><td class="num warn">{{ c.actual }}</td><td class="num">{{ c.cap }}</td></tr>
         {% endfor %}
       </tbody>
     </table>
+  {% elif order.conflicted %}
+    <div class="flash warning">该单处于暂停状态，但当前没有可列出的超限格；请核对后重新提交以恢复。</div>
   {% endif %}
   <p>
     <a class="button" href="{{ url_for('orders', order_no=order.order_no, cause=order.cause, start_utc=order.start_utc, end_utc=order.end_utc, cap=order.cap) }}">以本单内容更正</a>

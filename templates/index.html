@@ -22,6 +22,10 @@
     </label>
     <button type="submit">导入并重算</button>
   </form>
+  <p class="hint">
+    只复核本次新增、改值或删去的计量格；值未变的格共用原记录、不重算。
+    导入后若某单出现超限格，则整单暂停并在单据详情列出全部超限格（风机 + UTC 时刻），全部消除后恢复。
+  </p>
 </section>
 
 <section class="card">
@@ -30,7 +34,7 @@
     <div class="flash error">
       有 {{ paused|length }} 张限发单因实发量超过每格上限被整单暂停（导入计量后可能出现）：
       {% for o in paused %}<a href="{{ url_for('order_detail', order_no=o.order_no) }}">{{ o.order_no }}</a>{% if not loop.last %}、{% endif %}{% endfor %}
-      请核对或更正。
+      全部超限格消除后自动恢复。
     </div>
   {% endif %}
   <form method="get" action="{{ url_for('index') }}" class="inline-form">

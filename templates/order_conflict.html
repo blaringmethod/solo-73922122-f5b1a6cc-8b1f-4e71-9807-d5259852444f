@@ -4,16 +4,17 @@
 <section class="card">
   <h1>单据 {{ order_no }} 已退回</h1>
   <div class="flash error">
-    下列 {{ conflicts|length }} 个格子的实发量超过了本次提交的每格上限，整单未生效。
-    原单据（若存在）与既有归因结果保持不变。
+    下列 {{ conflicts|length }} 个计量格（按风机与 UTC 时刻）的实发量超过了本次提交的每格上限，
+    整单未生效。原单据（若存在）与既有归因结果保持不变。
   </div>
   <table class="data">
     <thead>
-      <tr><th>格时刻 (UTC)</th><th class="num">可发量</th><th class="num">实发量</th><th class="num">本次上限</th><th>差额</th></tr>
+      <tr><th>风机</th><th>格时刻 (UTC)</th><th class="num">可发量</th><th class="num">实发量</th><th class="num">本次上限</th><th>差额</th></tr>
     </thead>
     <tbody>
       {% for c in conflicts %}
       <tr>
+        <td>{{ c.turbine }}</td>
         <td>{{ c.start_utc }}</td>
         <td class="num">{{ c.available }}</td>
         <td class="num warn">{{ c.actual }}</td>

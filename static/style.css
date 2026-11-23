@@ -68,6 +68,7 @@ a.small { font-size: 13px; font-weight: 400; margin-left: 8px; }
 .flash.success { background: var(--ok-bg); color: var(--ok); border-color: #a7f3d0; }
 .flash.error { background: var(--error-bg); color: var(--error); border-color: #fecaca; }
 .flash.warning { background: var(--warn-bg); color: var(--warn); border-color: #fde68a; }
+.flash.info { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
 
 .grid-form {
   display: grid;

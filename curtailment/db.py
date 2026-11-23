@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import sqlite3
 from contextlib import contextmanager
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Iterator
 
@@ -72,10 +73,42 @@ CREATE TABLE IF NOT EXISTS attribution_losses (
     PRIMARY KEY (turbine, start_utc, cause)
 );
 
+CREATE TABLE IF NOT EXISTS order_conflicts (
+    order_no    TEXT NOT NULL,
+    turbine     TEXT NOT NULL,
+    start_utc   TEXT NOT NULL,
+    available   TEXT NOT NULL,
+    actual      TEXT NOT NULL,
+    cap         TEXT NOT NULL,
+    PRIMARY KEY (order_no, turbine, start_utc)
+);
+
+-- 待重算的（风机, UTC 日期）；导入变化格、改单、暂停/恢复时标脏。
+CREATE TABLE IF NOT EXISTS dirty_days (
+    turbine     TEXT NOT NULL,
+    date        TEXT NOT NULL,
+    PRIMARY KEY (turbine, date)
+);
+
+CREATE TABLE IF NOT EXISTS meta (
+    key         TEXT PRIMARY KEY,
+    value       TEXT NOT NULL
+);
+
 CREATE INDEX IF NOT EXISTS idx_meters_turbine_time ON meters (turbine, start_utc);
+CREATE INDEX IF NOT EXISTS idx_meters_time ON meters (start_utc);
+CREATE INDEX IF NOT EXISTS idx_orders_range ON orders (active, start_utc, end_utc);
 CREATE INDEX IF NOT EXISTS idx_attribution_slots_date ON attribution_slots (turbine, date);
 CREATE INDEX IF NOT EXISTS idx_attribution_losses_date ON attribution_losses (turbine, date);
 """
+
+
+def _decimal_gt(left, right) -> int:
+    """SQLite 用户函数：按十进制（而非二进制浮点）比较电量。"""
+    try:
+        return 1 if Decimal(str(left)) > Decimal(str(right)) else 0
+    except (InvalidOperation, ValueError):
+        return 0
 
 
 def connect(path: str | Path) -> sqlite3.Connection:
@@ -83,6 +116,7 @@ def connect(path: str | Path) -> sqlite3.Connection:
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     conn.execute("PRAGMA journal_mode = WAL")
+    conn.create_function("decimal_gt", 2, _decimal_gt, deterministic=True)
     return conn
 
 
@@ -97,9 +131,9 @@ def init_db(path: str | Path) -> None:
 
 
 def _migrate(conn: sqlite3.Connection) -> None:
-    """轻量迁移：为早期库补 ``orders.conflicted`` 列。"""
-    columns = {row["name"] for row in conn.execute("PRAGMA table_info(orders)")}
-    if "conflicted" not in columns:
+    """轻量迁移：为早期库补列。"""
+    order_columns = {row["name"] for row in conn.execute("PRAGMA table_info(orders)")}
+    if "conflicted" not in order_columns:
         conn.execute(
             "ALTER TABLE orders ADD COLUMN conflicted INTEGER NOT NULL DEFAULT 0"
         )

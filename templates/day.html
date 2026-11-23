@@ -16,8 +16,8 @@
 
   {% if day.paused_orders %}
     <div class="flash error">
-      以下单据在导入新计量后出现实发量超上限的冲突，已整单暂停参与归因，请核对或更正：
-      {{ day.paused_orders.keys()|sort|join('、') }}
+      以下单据有超限格（实发量超过上限），整单暂停参与归因；全部超限格消除后恢复：
+      {% for order_no in day.paused_orders.keys()|sort %}<a href="{{ url_for('order_detail', order_no=order_no) }}">{{ order_no }}</a>{% if not loop.last %}、{% endif %}{% endfor %}
     </div>
   {% endif %}
 

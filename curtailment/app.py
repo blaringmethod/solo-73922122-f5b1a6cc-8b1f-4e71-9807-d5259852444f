@@ -43,6 +43,12 @@ def create_app(test_config: dict | None = None) -> Flask:
     path = app.config.get("DATABASE") or db_path()
     app.config["DATABASE"] = str(path)
     init_db(path)
+    # 旧库首次启动：补建超限明细、复核暂停状态并重算受影响日报；新库直接跳过。
+    boot_conn = connect(app.config["DATABASE"])
+    try:
+        service.bootstrap(boot_conn)
+    finally:
+        boot_conn.close()
 
     def get_db() -> sqlite3.Connection:
         if "db" not in g:
@@ -122,10 +128,15 @@ def create_app(test_config: dict | None = None) -> Flask:
             flash(str(exc), "error")
             return redirect(url_for("index", turbine=turbine or None))
         flash(
-            f"导入 {result.turbine} 成功：新增 {result.inserted} 格，更新 {result.updated} 格，"
-            f"重算日期 {', '.join(result.dates)}",
+            f"导入 {result.turbine} 成功：新增 {result.inserted} 格、更新 {result.updated} 格、"
+            f"删去 {result.deleted} 格、未变 {result.unchanged} 格；"
+            f"复核 {result.rechecked} 个变化格，重算 {result.recomputed_days} 个日报"
+            f"（{len(result.recomputed_dates)} 个日期："
+            f"{', '.join(result.recomputed_dates) or '无'}）",
             "success",
         )
+        for order_no, count in result.order_rechecks.items():
+            flash(f"单据 {order_no} 复核 {count} 格。", "info")
         for warning in parsed.warnings:
             flash(warning, "warning")
         for order_no, hits in sorted(result.order_conflicts.items()):

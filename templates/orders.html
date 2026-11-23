@@ -50,7 +50,7 @@
         <td>{{ o.end_utc }}</td>
         <td class="num">{{ o.cap }}</td>
         <td>r{{ o.revision }}</td>
-        <td>{% if o.conflicted %}<span class="warn">冲突已暂停</span>{% else %}生效{% endif %}</td>
+        <td>{% if o.conflicted %}<span class="warn">冲突已暂停（{{ o.conflict_count }} 格）</span>{% else %}生效{% endif %}</td>
         <td>{{ o.updated_at }}</td>
         <td>
           <a href="{{ url_for('orders', order_no=o.order_no, cause=o.cause, start_utc=o.start_utc, end_utc=o.end_utc, cap=o.cap) }}">更正</a>

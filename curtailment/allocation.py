@@ -53,6 +53,7 @@ class Interval:
     start_utc: str
     available: Decimal
     actual: Decimal
+    turbine: str = ""
 
     @property
     def curtailment(self) -> Decimal:
@@ -73,6 +74,7 @@ class Order:
     end_utc: str
     cap: Decimal
     revision: int = 1
+    conflicted: bool = False
 
     def covers(self, interval: Interval) -> bool:
         return self.start_utc <= interval.start_utc < self.end_utc
@@ -117,10 +119,12 @@ class Conflict:
     available: Decimal
     actual: Decimal
     cap: Decimal
+    turbine: str = ""
 
     def as_dict(self) -> dict:
         return {
             "order_no": self.order_no,
+            "turbine": self.turbine,
             "slot": self.slot,
             "start_utc": self.start_utc,
             "available": str(q(self.available)),
@@ -272,6 +276,7 @@ def find_conflicts(interval: Interval, orders: Iterable[Order]) -> list[Conflict
                     available=q(interval.available),
                     actual=actual,
                     cap=q(order.cap),
+                    turbine=interval.turbine,
                 )
             )
     return found
